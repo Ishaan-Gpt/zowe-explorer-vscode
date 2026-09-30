@@ -54,7 +54,7 @@ import { DatasetFSProvider } from "../../../src/trees/dataset/DatasetFSProvider"
 import { Constants } from "../../../src/configuration/Constants";
 import { ProfilesUtils } from "../../../src/utils/ProfilesUtils";
 import { AuthUtils } from "../../../src/utils/AuthUtils";
-import { FilterDescriptor } from "../../../src/management/FilterManagement";
+import { FilterDescriptor, FilterItem } from "../../../src/management/FilterManagement";
 import { ZoweDatasetNode } from "../../../src/trees/dataset/ZoweDatasetNode";
 import { USSTree } from "../../../src/trees/uss/USSTree";
 import { ZoweExplorerExtender } from "../../../src/extending/ZoweExplorerExtender";
@@ -489,6 +489,58 @@ describe("Profiles Unit Tests - Function createZoweSession", () => {
         expect(errorSpy).toHaveBeenCalledTimes(1);
         expect(errorSpy).toHaveBeenCalledWith(Error("test error"));
         errorSpy.mockClear();
+    });
+
+    describe("add to all trees prompt", () => {
+        beforeEach(() => {
+            vi.spyOn(Gui, "resolveQuickPick").mockReset();
+            vi.spyOn(Profiles, "handleChangeForAllTrees").mockReset();
+            vi.spyOn(Gui, "infoMessage").mockClear();
+        });
+
+        function createPromptMocks() {
+            createGlobalMocks();
+            const treeProvider = {
+                getTreeType: vi.fn().mockReturnValue(PersistenceSchemaEnum.Dataset),
+                mSessionNodes: [],
+                addSession: vi.fn(),
+            } as any;
+            vi.spyOn(Profiles.getInstance(), "loadNamedProfile").mockReturnValue({ name: "sestest", type: "zosmf" } as any);
+            vi.spyOn(ZoweExplorerApiRegister.getInstance(), "registeredMvsApiTypes").mockReturnValue(["zosmf"]);
+            vi.spyOn(Gui, "createQuickPick").mockReturnValue({
+                show: vi.fn(),
+                hide: vi.fn(),
+                items: [],
+                placeholder: "",
+                title: "",
+                ignoreFocusOut: false,
+            } as any);
+            vi.spyOn(Gui, "resolveQuickPick").mockResolvedValueOnce(new FilterItem({ text: "sestest" }) as any);
+            return { treeProvider };
+        }
+
+        it("does not add the profile when the prompt is cancelled", async () => {
+            const { treeProvider } = createPromptMocks();
+            const infoMessageSpy = vi.spyOn(Gui, "infoMessage");
+            vi.spyOn(Profiles, "handleChangeForAllTrees").mockResolvedValueOnce(undefined as any);
+            await Profiles.getInstance().createZoweSession(treeProvider);
+            expect(infoMessageSpy).toHaveBeenCalledWith("Operation cancelled");
+            expect(treeProvider.addSession).not.toHaveBeenCalled();
+        });
+
+        it("adds the profile to all trees when Yes is selected", async () => {
+            const { treeProvider } = createPromptMocks();
+            vi.spyOn(Profiles, "handleChangeForAllTrees").mockResolvedValueOnce(true);
+            await Profiles.getInstance().createZoweSession(treeProvider);
+            expect(treeProvider.addSession).toHaveBeenCalledWith({ sessionName: "sestest", addToAllTrees: true });
+        });
+
+        it("adds the profile to the current tree only when No is selected", async () => {
+            const { treeProvider } = createPromptMocks();
+            vi.spyOn(Profiles, "handleChangeForAllTrees").mockResolvedValueOnce(false);
+            await Profiles.getInstance().createZoweSession(treeProvider);
+            expect(treeProvider.addSession).toHaveBeenCalledWith({ sessionName: "sestest", addToAllTrees: false });
+        });
     });
 });
 
