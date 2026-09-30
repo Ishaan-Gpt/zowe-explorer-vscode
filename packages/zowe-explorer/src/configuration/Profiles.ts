@@ -585,9 +585,14 @@ export class Profiles extends ProfilesCache {
                     comment: ["chosen profile", "tree type"],
                 })
             );
+            const addToAllTrees = await Profiles.handleChangeForAllTrees(chosenProfile, true);
+            if (addToAllTrees === undefined) {
+                Gui.infoMessage(vscode.l10n.t("Operation cancelled"));
+                return;
+            }
             await zoweFileProvider.addSession({
                 sessionName: chosenProfile,
-                addToAllTrees: await Profiles.handleChangeForAllTrees(chosenProfile, true),
+                addToAllTrees,
             });
         } else {
             ZoweLogger.debug(debugMsg);
