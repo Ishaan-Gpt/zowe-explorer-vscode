@@ -2034,6 +2034,15 @@
           "markdownDescription": "%zowe.settings.maxSearchHistory%",
           "scope": "window"
         },
+        "zowe.settings.disabledProfileValidation": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "%zowe.settings.disabledProfileValidation%",
+          "scope": "window"
+        },
         "zowe.files.logsFolder.path": {
           "type": "string",
           "default": "",

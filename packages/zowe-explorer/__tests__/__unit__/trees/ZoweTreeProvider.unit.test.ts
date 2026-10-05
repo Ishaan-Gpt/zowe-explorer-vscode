@@ -145,6 +145,7 @@ async function createGlobalMocks() {
             fetchAllProfilesByType: vi.fn(() => {
                 return [{ name: "profile1" }];
             }),
+            isProfileValidationDisabled: vi.fn(() => false),
         }),
         configurable: true,
     });
@@ -642,6 +643,42 @@ describe("Tree Provider Unit Tests - function loadProfileByPersistedProfile", ()
         expect(zoweLoggerWarnSpy).toHaveBeenCalledTimes(1);
         resetValidationSettingsSpy.mockClear();
         zoweLoggerWarnSpy.mockClear();
+    });
+
+    it("should skip validation for profiles persisted in the disabled profile validation list", async () => {
+        const globalMocks = await createGlobalMocks();
+        globalMocks.testDSTree = DatasetInit.createDatasetTree(imperative.Logger.getAppLogger());
+        globalMocks.testDSTree.mSessionNodes = [{ label: "sestest", getProfileName: (): string => "profile1" }];
+        globalMocks.testDSTree.getSessions = (): string[] => ["profile1"];
+        globalMocks.testDSTree.addSingleSession = vi.fn();
+
+        const resetValidationSettingsSpy = vi.spyOn(SharedActions, "resetValidationSettings");
+        resetValidationSettingsSpy.mockImplementation((() => undefined) as any).mockClear();
+        vi.spyOn(Profiles.getInstance(), "isProfileValidationDisabled").mockReturnValue(true);
+
+        await expect(
+            (ZoweTreeProvider.prototype as any).loadProfileByPersistedProfile(globalMocks.testDSTree, undefined, true)
+        ).resolves.not.toThrow();
+        expect(resetValidationSettingsSpy).toHaveBeenCalledWith(expect.anything(), false);
+        resetValidationSettingsSpy.mockClear();
+    });
+
+    it("should validate profiles when automatic validation is on and none are persisted as disabled", async () => {
+        const globalMocks = await createGlobalMocks();
+        globalMocks.testDSTree = DatasetInit.createDatasetTree(imperative.Logger.getAppLogger());
+        globalMocks.testDSTree.mSessionNodes = [{ label: "sestest", getProfileName: (): string => "profile1" }];
+        globalMocks.testDSTree.getSessions = (): string[] => ["profile1"];
+        globalMocks.testDSTree.addSingleSession = vi.fn();
+
+        const resetValidationSettingsSpy = vi.spyOn(SharedActions, "resetValidationSettings");
+        resetValidationSettingsSpy.mockImplementation((() => undefined) as any).mockClear();
+        vi.spyOn(Profiles.getInstance(), "isProfileValidationDisabled").mockReturnValue(false);
+
+        await expect(
+            (ZoweTreeProvider.prototype as any).loadProfileByPersistedProfile(globalMocks.testDSTree, undefined, true)
+        ).resolves.not.toThrow();
+        expect(resetValidationSettingsSpy).toHaveBeenCalledWith(expect.anything(), true);
+        resetValidationSettingsSpy.mockClear();
     });
 });
 

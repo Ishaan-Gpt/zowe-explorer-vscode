@@ -2753,6 +2753,10 @@ describe("Profiles Unit Tests - function clearFilterFromAllTrees", () => {
 });
 
 describe("Profiles Unit Tests - function disableValidation", () => {
+    beforeEach(() => {
+        vi.spyOn(SettingsConfig, "setDirectValue").mockImplementation((() => undefined) as any);
+    });
+
     afterEach(() => {
         vi.clearAllMocks();
         vi.restoreAllMocks();
@@ -2776,9 +2780,31 @@ describe("Profiles Unit Tests - function disableValidation", () => {
         expect(disableValidationContextSpy).toHaveBeenCalledTimes(1);
         expect(globalMocks.testNode.contextValue).toEqual(Constants.DS_SESSION_CONTEXT + Constants.VALIDATE_SUFFIX);
     });
+
+    it("should persist the profile name when validation is disabled", () => {
+        const globalMocks = createGlobalMocks();
+        vi.spyOn(SharedTreeProviders, "getSessionForAllTrees").mockReturnValue([globalMocks.testNode]);
+        vi.spyOn(SettingsConfig, "getDirectValue").mockReturnValue([]);
+        const setDirectValueSpy = vi.spyOn(SettingsConfig, "setDirectValue").mockImplementation((() => undefined) as any);
+        Profiles.getInstance().disableValidation(globalMocks.testNode);
+        expect(setDirectValueSpy).toHaveBeenCalledWith(Constants.SETTINGS_DISABLED_PROFILE_VALIDATION, ["test"]);
+    });
+
+    it("should not update the persisted list when the profile is already persisted as disabled", () => {
+        const globalMocks = createGlobalMocks();
+        vi.spyOn(SharedTreeProviders, "getSessionForAllTrees").mockReturnValue([globalMocks.testNode]);
+        vi.spyOn(SettingsConfig, "getDirectValue").mockReturnValue(["test"]);
+        const setDirectValueSpy = vi.spyOn(SettingsConfig, "setDirectValue").mockImplementation((() => undefined) as any);
+        Profiles.getInstance().disableValidation(globalMocks.testNode);
+        expect(setDirectValueSpy).not.toHaveBeenCalled();
+    });
 });
 
 describe("Profiles Unit Tests - function enableValidation", () => {
+    beforeEach(() => {
+        vi.spyOn(SettingsConfig, "setDirectValue").mockImplementation((() => undefined) as any);
+    });
+
     afterEach(() => {
         vi.clearAllMocks();
         vi.restoreAllMocks();
@@ -2804,6 +2830,50 @@ describe("Profiles Unit Tests - function enableValidation", () => {
         expect(Profiles.getInstance().enableValidation(globalMocks.testNode)).toEqual(globalMocks.testNode);
         expect(enableValidationContextSpy).toHaveBeenCalledTimes(1);
         expect(globalMocks.testNode.contextValue).toEqual(Constants.DS_SESSION_CONTEXT + Constants.VALIDATE_SUFFIX);
+    });
+
+    it("should remove the profile name from the persisted list when validation is enabled", () => {
+        const globalMocks = createGlobalMocks();
+        vi.spyOn(SharedTreeProviders, "getSessionForAllTrees").mockReturnValue([globalMocks.testNode]);
+        vi.spyOn(SettingsConfig, "getDirectValue").mockReturnValue(["test", "other"]);
+        const setDirectValueSpy = vi.spyOn(SettingsConfig, "setDirectValue").mockImplementation((() => undefined) as any);
+        Profiles.getInstance().enableValidation(globalMocks.testNode);
+        expect(setDirectValueSpy).toHaveBeenCalledWith(Constants.SETTINGS_DISABLED_PROFILE_VALIDATION, ["other"]);
+    });
+
+    it("should not update the persisted list when the profile is not persisted as disabled", () => {
+        const globalMocks = createGlobalMocks();
+        vi.spyOn(SharedTreeProviders, "getSessionForAllTrees").mockReturnValue([globalMocks.testNode]);
+        vi.spyOn(SettingsConfig, "getDirectValue").mockReturnValue(["other"]);
+        const setDirectValueSpy = vi.spyOn(SettingsConfig, "setDirectValue").mockImplementation((() => undefined) as any);
+        Profiles.getInstance().enableValidation(globalMocks.testNode);
+        expect(setDirectValueSpy).not.toHaveBeenCalled();
+    });
+});
+
+describe("Profiles Unit Tests - function isProfileValidationDisabled", () => {
+    afterEach(() => {
+        vi.clearAllMocks();
+        vi.restoreAllMocks();
+        vi.resetAllMocks();
+    });
+
+    it("should return true when the profile is in the persisted disabled list", () => {
+        createGlobalMocks();
+        vi.spyOn(SettingsConfig, "getDirectValue").mockReturnValue(["test"]);
+        expect(Profiles.getInstance().isProfileValidationDisabled("test")).toBe(true);
+    });
+
+    it("should return false when the profile is not in the persisted disabled list", () => {
+        createGlobalMocks();
+        vi.spyOn(SettingsConfig, "getDirectValue").mockReturnValue(["other"]);
+        expect(Profiles.getInstance().isProfileValidationDisabled("test")).toBe(false);
+    });
+
+    it("should return false when the setting is not configured", () => {
+        createGlobalMocks();
+        vi.spyOn(SettingsConfig, "getDirectValue").mockReturnValue(undefined);
+        expect(Profiles.getInstance().isProfileValidationDisabled("test")).toBe(false);
     });
 });
 

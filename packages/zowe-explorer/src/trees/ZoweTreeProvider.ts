@@ -407,6 +407,19 @@ export class ZoweTreeProvider<T extends IZoweTreeNode> {
         return JwtCheckResult.TokenValid;
     }
 
+    /**
+     * Determines whether a profile should be validated when its session is loaded,
+     * honoring both the global automatic validation setting and the persisted
+     * per-profile choice made with the Disable Profile Validation action.
+     * @param profile The profile whose session is being loaded
+     * @param isUsingAutomaticProfileValidation The value of the zowe.automaticProfileValidation setting
+     * @returns False if validation should be skipped for the profile, true otherwise
+     */
+    private shouldValidateProfile(profile: imperative.IProfileLoaded, isUsingAutomaticProfileValidation: boolean): boolean {
+        ZoweLogger.trace("ZoweTreeProvider.shouldValidateProfile called.");
+        return isUsingAutomaticProfileValidation && !Profiles.getInstance().isProfileValidationDisabled(profile.name);
+    }
+
     private async loadProfileBySessionName(
         sessionName: string,
         treeProvider: IZoweTree<IZoweTreeNode>,
@@ -419,7 +432,7 @@ export class ZoweTreeProvider<T extends IZoweTreeNode> {
                 if (node.label !== vscode.l10n.t("Favorites")) {
                     const name = node.getProfileName();
                     if (name === profile.name) {
-                        SharedActions.resetValidationSettings(node, isUsingAutomaticProfileValidation);
+                        SharedActions.resetValidationSettings(node, this.shouldValidateProfile(profile, isUsingAutomaticProfileValidation));
                     }
                 }
             }
@@ -441,7 +454,7 @@ export class ZoweTreeProvider<T extends IZoweTreeNode> {
                 await treeProvider.addSingleSession(profile);
                 for (const node of treeProvider.mSessionNodes) {
                     if (node.label !== vscode.l10n.t("Favorites") && node.getProfileName() === profile.name) {
-                        SharedActions.resetValidationSettings(node, isUsingAutomaticProfileValidation);
+                        SharedActions.resetValidationSettings(node, this.shouldValidateProfile(profile, isUsingAutomaticProfileValidation));
                         break;
                     }
                 }

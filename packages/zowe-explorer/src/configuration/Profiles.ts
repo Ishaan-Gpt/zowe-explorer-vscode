@@ -353,6 +353,7 @@ export class Profiles extends ProfilesCache {
                 this.disableValidationContext(treeNode);
             }
         });
+        this.updatePersistedValidationSetting(node.getProfile().name, false);
         return node;
     }
 
@@ -378,6 +379,7 @@ export class Profiles extends ProfilesCache {
                 this.enableValidationContext(treeNode);
             }
         });
+        this.updatePersistedValidationSetting(node.getProfile().name, true);
         return node;
     }
 
@@ -394,6 +396,37 @@ export class Profiles extends ProfilesCache {
         }
 
         return node;
+    }
+
+    /**
+     * Checks whether profile validation was persisted as disabled for the given profile.
+     * @param profileName The name of the profile to check
+     * @returns True if the profile is in the persisted list of profiles with validation disabled
+     */
+    public isProfileValidationDisabled(profileName: string): boolean {
+        ZoweLogger.trace("Profiles.isProfileValidationDisabled called.");
+        const disabledProfiles = SettingsConfig.getDirectValue<string[]>(Constants.SETTINGS_DISABLED_PROFILE_VALIDATION, []);
+        return disabledProfiles?.includes(profileName) ?? false;
+    }
+
+    /**
+     * Adds or removes a profile name from the persisted list of profiles with validation disabled,
+     * so the choice survives across VS Code sessions.
+     * @param profileName The name of the profile to update
+     * @param validationEnabled True to re-enable validation for the profile, false to disable it
+     */
+    private updatePersistedValidationSetting(profileName: string, validationEnabled: boolean): void {
+        ZoweLogger.trace("Profiles.updatePersistedValidationSetting called.");
+        const disabledProfiles = SettingsConfig.getDirectValue<string[]>(Constants.SETTINGS_DISABLED_PROFILE_VALIDATION, []) ?? [];
+        const index = disabledProfiles.indexOf(profileName);
+        if (validationEnabled && index >= 0) {
+            disabledProfiles.splice(index, 1);
+        } else if (!validationEnabled && index === -1) {
+            disabledProfiles.push(profileName);
+        } else {
+            return;
+        }
+        void SettingsConfig.setDirectValue(Constants.SETTINGS_DISABLED_PROFILE_VALIDATION, disabledProfiles);
     }
 
     public validationArraySetup(theProfile: imperative.IProfileLoaded, validationSetting: boolean): Validation.IValidationSetting {

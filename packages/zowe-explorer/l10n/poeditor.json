@@ -635,6 +635,9 @@
   "zowe.confirmSshServerDeploy": {
     "Require user confirmation before connecting with an SSH profile": ""
   },
+  "zowe.settings.disabledProfileValidation": {
+    "Profile names that should not be validated when Zowe Explorer loads. Profiles are added to this list when the Disable Profile Validation action is used, and removed when the Enable Profile Validation action is used.": ""
+  },
   "#### Connecting to a host": "",
   "#### Copy across LPAR updates": "",
   "#### Data integrity fixes": "",
