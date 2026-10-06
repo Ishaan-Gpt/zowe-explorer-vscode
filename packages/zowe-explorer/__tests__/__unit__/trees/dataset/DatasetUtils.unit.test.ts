@@ -21,7 +21,7 @@ describe("Dataset utils unit tests - function getExtension", () => {
             { name: "TEST.DS.CBL", extension: ".cbl" },
             { name: "TEST.PDS.CPY(M1)", extension: ".cpy" },
             { name: "TEST.DS.INCLUDE", extension: ".inc" },
-            { name: "TEST.DS.PLX", extension: ".pli" },
+            { name: "TEST.DS.PLX", extension: null },
             { name: "TEST.DS.SHELL", extension: ".sh" },
             { name: "TEST.DS.EXEC", extension: ".rexx" },
             { name: "TEST.DS.XML", extension: ".xml" },
