@@ -17,6 +17,8 @@ All notable changes to the "zowe-explorer-api" extension will be documented in t
 
 ### Bug fixes
 
+- Removed the PLX qualifier from the PL/I file extension mapping, so PL/X data sets are no longer opened as PL/I files. [#3801](https://github.com/zowe/zowe-explorer-vscode/issues/3801)
+
 ## `3.6.0`
 
 ### New features and enhancements
